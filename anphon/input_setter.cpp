@@ -19,6 +19,7 @@
 #include "gruneisen.h"
 #include "integration.h"
 #include "isotope.h"
+#include "tmatrix.h"
 #include "iterativebte.h"
 #include "kpoint.h"
 #include "mode_analysis.h"
@@ -122,6 +123,10 @@ void InputSetter::set_general_vars(PHON *phon, const GeneralInputVars &vars) con
 
 void InputSetter::set_analysis_vars(PHON *phon, const AnalysisInputVars &vars) const
 {
+    phon->tmatrix->file = vars.tmatrix_file;
+    phon->tmatrix->epsilon_specified = vars.tmatrix_epsilon.has_value();
+    phon->tmatrix->epsilon_kayser = vars.tmatrix_epsilon.value_or(-1.0);
+    phon->tmatrix->integration_method = vars.tmatrix_integration;
     phon->phonon_velocity->print_velocity = vars.print_vel;
     phon->dynamical->print_eigenvectors = vars.print_evec;
     phon->dynamical->participation_ratio = vars.participation_ratio;

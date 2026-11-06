@@ -187,7 +187,7 @@ public:
 
     void store_kappa(const double *const *const *kappa_peierls, const double *const *const *kappa_3ph_only,
                      const double *const *const *kappa_coherent, const double *const *const *kappa_spec,
-                     const double *const *gamma_isotope);
+                     const double *const *gamma_isotope, const double *const *gamma_tmatrix = nullptr);
 
     [[nodiscard]] const std::string &get_filename() const;
 

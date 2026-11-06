@@ -441,7 +441,8 @@ void InputParser::parse_analysis_vars(PHON *phon, const bool use_default_values)
         "DELTA_A",   "ANIME",       "ANIME_CELLSIZE",  "ANIME_FORMAT",     "ANIME_FRAMES",
         "SPS",       "PRINTV3",     "PRINTPR",         "FC2_EWALD",        "SELF_W",
         "UCORR",     "SHIFT_UCORR", "DIELEC",          "SELF_ENERGY",      "PRINTV4",
-        "ZMODE",     "IRREPS",      "PROJECTION_AXES", "LONGITUDINAL_DOS", "FE_BUBBLE"};
+        "ZMODE",     "IRREPS",      "PROJECTION_AXES", "LONGITUDINAL_DOS", "FE_BUBBLE",
+        "TMATRIX_FILE", "TMATRIX_EPSILON", "TMATRIX_INTEGRATION"};
 
     std::map<std::string, std::string> analysis_var_dict;
     std::vector<std::string> anime_kpoint, anime_cellsize;
@@ -454,6 +455,13 @@ void InputParser::parse_analysis_vars(PHON *phon, const bool use_default_values)
     if (!use_default_values) {
         get_var_dict(input_list, analysis_var_dict);
 
+        assign_val(analysis_vars.tmatrix_file, "TMATRIX_FILE", analysis_var_dict);
+        assign_val(analysis_vars.tmatrix_integration, "TMATRIX_INTEGRATION", analysis_var_dict);
+        if (!analysis_var_dict["TMATRIX_EPSILON"].empty()) {
+            double width;
+            assign_val(width, "TMATRIX_EPSILON", analysis_var_dict);
+            analysis_vars.tmatrix_epsilon = width;
+        }
         assign_val(analysis_vars.print_vel, "PRINTVEL", analysis_var_dict);
         assign_val(analysis_vars.print_evec, "PRINTEVEC", analysis_var_dict);
         assign_val(analysis_vars.print_eval, "PRINTEVAL", analysis_var_dict);

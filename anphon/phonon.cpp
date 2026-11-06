@@ -23,6 +23,7 @@
 #include "ifc_derivative.h"
 #include "integration.h"
 #include "isotope.h"
+#include "tmatrix.h"
 #include "iterativebte.h"
 #include "kpoint.h"
 #include "mode_analysis.h"
@@ -80,6 +81,8 @@ void PHON::create_pointers()
     anharmonic_core = std::make_unique<AnharmonicCore>(run_info, system.get());
     selfenergy = std::make_unique<Selfenergy>();
     isotope = std::make_unique<Isotope>();
+    tmatrix = std::make_unique<Tmatrix>(run_info, system.get(), symmetry.get(), kpoint.get(),
+                                       dos.get(), dynamical.get(), isotope.get());
     mode_symmetry = std::make_unique<ModeSymmetry>(run_info, system.get());
     gruneisen = std::make_unique<Gruneisen>(run_info, system.get());
     relaxation = std::make_unique<Relaxation>(run_info, system.get());
@@ -95,7 +98,7 @@ void PHON::create_pointers()
                                                   dos.get(),
                                                   phonon_velocity.get(),
                                                   anharmonic_core.get(),
-                                                  isotope.get());
+                                                  isotope.get(), tmatrix.get());
     iterativebte = std::make_unique<Iterativebte>(run_info,
                                                   system.get(),
                                                   symmetry.get(),
@@ -155,6 +158,7 @@ void PHON::destroy_pointers()
     relaxation.reset();
     gruneisen.reset();
     mode_symmetry.reset();
+    tmatrix.reset();
     isotope.reset();
     selfenergy.reset();
     anharmonic_core.reset();
@@ -587,6 +591,9 @@ void PHON::setup_base() const
     phonon_velocity->setup_velocity(symmetry->SymmListWithMap, symmetry->time_reversal_sym);
     integration->setup_integration(anharmonic_core->quartic_mode, run_info.my_rank, get_verbosity());
     dos->setup(*integration, dynamical->require_eigenvectors);
+    tmatrix->setup();
+    if (tmatrix->enabled() && fcs_phonon->fc2_temperature >= 0.0)
+        exit("setup_base", "TMATRIX_FILE currently requires a static host (no FC2_TEMPERATURE).");
     thermodynamics->setup();
     anharmonic_core->setup(fcs_phonon->maxorder, fcs_phonon->force_constant_with_cell, dos->kmesh_dos.get());
     dielec->init(dos->emin,
@@ -732,6 +739,12 @@ void PHON::execute_kappa() const
                                              *ewald);
     }
 
+    if (tmatrix->enabled() && run_info.my_rank == 0 &&
+        (conductivity->solver_ibte || mode_analysis->ks_analyze_mode || mode_analysis->selfenergy_mode)) {
+        exit("execute_kappa", "TMATRIX_FILE currently supports SOLVER=RTA without KS_INPUT or MODE=selfenergy.");
+    }
+    tmatrix->calculate();
+
     isotope->setup_isotope_scattering(*system,
                                       dos->kmesh_dos->nk_irred,
                                       dynamical->neval,
@@ -764,6 +777,7 @@ void PHON::execute_kappa() const
         } else {
             writes->writeKappa();
             writes->writeSelfenergyIsotope();
+            tmatrix->write_selfenergy();
         }
     }
 }

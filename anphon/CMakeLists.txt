@@ -180,6 +180,7 @@ set(SOURCES ${PROJECT_SOURCE_DIR}/anharmonic_core.cpp
             ${PROJECT_SOURCE_DIR}/integration.cpp
             ${PROJECT_SOURCE_DIR}/interpolation.cpp
             ${PROJECT_SOURCE_DIR}/isotope.cpp
+            ${PROJECT_SOURCE_DIR}/tmatrix.cpp
             ${PROJECT_SOURCE_DIR}/iterativebte.cpp
             ${PROJECT_SOURCE_DIR}/kappa_result_io.cpp
             ${PROJECT_SOURCE_DIR}/kappa_result_io_text.cpp
@@ -237,6 +238,9 @@ set(HEADERS ${PROJECT_SOURCE_DIR}/anharmonic_core.h
             ${PROJECT_SOURCE_DIR}/integration.h
             ${PROJECT_SOURCE_DIR}/interpolation.h
             ${PROJECT_SOURCE_DIR}/isotope.h
+            ${PROJECT_SOURCE_DIR}/tmatrix.h
+            ${PROJECT_SOURCE_DIR}/tmatrix_kernel.h
+            ${PROJECT_SOURCE_DIR}/tmatrix_tetrahedron.h
             ${PROJECT_SOURCE_DIR}/isotope_kernel.h
             ${PROJECT_SOURCE_DIR}/iterativebte.h
             ${PROJECT_SOURCE_DIR}/kpoint.h

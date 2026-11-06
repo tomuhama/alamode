@@ -24,6 +24,7 @@ or http://opensource.org/licenses/mit-license.php for information.
 #include "gruneisen.h"
 #include "integration.h"
 #include "isotope.h"
+#include "tmatrix.h"
 #include "iterativebte.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
@@ -2869,7 +2870,9 @@ void Writes::writeKappa() const
                 ofs_kl << "# Isotope effects are included." << std::endl;
             }
 
-            if (phon->conductivity->len_boundary > eps) {
+            if (phon->tmatrix->enabled()) ofs_kl << "# Finite-cluster T-matrix defect effects are included.\n";
+
+        if (phon->conductivity->len_boundary > eps) {
                 ofs_kl << "# Size of boundary " << std::scientific << std::setprecision(2)
                        << phon->conductivity->len_boundary * 1e9 << " [nm]" << std::endl;
             }
@@ -2896,6 +2899,8 @@ void Writes::writeKappa() const
         if (phon->isotope->include_isotope) {
             ofs_kl << "# Isotope effects are included.\n";
         }
+
+        if (phon->tmatrix->enabled()) ofs_kl << "# Finite-cluster T-matrix defect effects are included.\n";
 
         if (phon->conductivity->len_boundary > eps) {
             ofs_kl << "# Size of boundary " << std::scientific << std::setprecision(2)
@@ -2924,6 +2929,7 @@ void Writes::writeKappa() const
             if (phon->isotope->include_isotope) {
                 ofs_kl << "# Isotope effects are included.\n";
             }
+            if (phon->tmatrix->enabled()) ofs_kl << "# Finite-cluster T-matrix defect effects are included.\n";
 
             for (i = 0; i < phon->conductivity->ntemp; ++i) {
                 for (j = 0; j < phon->dos->n_energy; ++j) {
@@ -2951,6 +2957,7 @@ void Writes::writeKappa() const
             if (phon->isotope->include_isotope) {
                 ofs_kl << "# Isotope effects are included.\n";
             }
+            if (phon->tmatrix->enabled()) ofs_kl << "# Finite-cluster T-matrix defect effects are included.\n";
 
             for (i = 0; i < phon->conductivity->ntemp; ++i) {
                 ofs_kl << std::setw(10) << std::right << std::fixed << std::setprecision(2)

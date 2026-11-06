@@ -104,6 +104,8 @@ public:
 
     std::unique_ptr<class Isotope> isotope;
 
+    std::unique_ptr<class Tmatrix> tmatrix;
+
     std::unique_ptr<class Scph> scph;
 
     std::unique_ptr<class Ewald> ewald;

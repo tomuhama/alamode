@@ -90,6 +90,9 @@ struct GeneralInputVars
 
 struct AnalysisInputVars
 {
+    std::string tmatrix_file;
+    std::optional<double> tmatrix_epsilon;
+    int tmatrix_integration = 0;
     bool print_eval = false; // PRINTEVAL
     bool print_evec = false; // PRINTEVEC
     bool print_vel = false;  // PRINTVEL

@@ -28,6 +28,7 @@
 #include "integration.h"
 #include "interpolation.h"
 #include "isotope.h"
+#include "tmatrix.h"
 #include "kappa_result_io_text.h"
 #include "kpoint.h"
 #include "mathfunctions.h"
@@ -53,10 +54,10 @@ Conductivity::Conductivity(const RunInfo &run_in, const System *system_in, const
                            const Dynamical *dynamical_in, Integration *integration_in,
                            const Thermodynamics *thermodynamics_in, const Dos *dos_in,
                            const PhononVelocity *phonon_velocity_in, AnharmonicCore *anharmonic_core_in,
-                           const Isotope *isotope_in) :
+                           const Isotope *isotope_in, Tmatrix *tmatrix_in) :
     run(run_in), system(system_in), symmetry(symmetry_in), fcs_phonon(fcs_phonon_in), dielec(dielec_in),
     ewald(ewald_in), dynamical(dynamical_in), integration(integration_in), thermodynamics(thermodynamics_in),
-    dos(dos_in), phonon_velocity(phonon_velocity_in), anharmonic_core(anharmonic_core_in), isotope(isotope_in)
+    dos(dos_in), phonon_velocity(phonon_velocity_in), anharmonic_core(anharmonic_core_in), isotope(isotope_in), tmatrix(tmatrix_in)
 {
     set_default_variables();
 }
@@ -1358,6 +1359,18 @@ void Conductivity::compute_kappa()
             }
         }
 
+        if (tmatrix->enabled()) {
+            NDArray<double, 2> elastic(dos->kmesh_dos->nk_irred * ns, 1);
+            for (iks = 0; iks < dos->kmesh_dos->nk_irred * ns; ++iks)
+                elastic[iks][0] = tmatrix->gamma_tmatrix[iks / ns][iks % ns];
+            average_self_energy_at_degenerate_point(1, dos->kmesh_dos.get(),
+                                                    dos->dymat_dos->get_eigenvalues(), elastic);
+            for (iks = 0; iks < dos->kmesh_dos->nk_irred * ns; ++iks) {
+                tmatrix->gamma_tmatrix[iks / ns][iks % ns] = elastic[iks][0];
+                for (i = 0; i < ntemp; ++i) gamma_total[iks][i] += elastic[iks][0];
+            }
+        }
+
         double vel_norm;
         if (len_boundary > eps) {
             // Use the basis-invariant block speed for boundary scattering:
@@ -1474,7 +1487,8 @@ void Conductivity::compute_kappa()
                 fph_rta > 0 ? kappa_3only.ptr() : nullptr,
                 calc_coherent ? kappa_coherent.ptr() : nullptr,
                 calc_kappa_spec ? kappa_spec.ptr() : nullptr,
-                isotope->include_isotope ? static_cast<const double *const *>(isotope->gamma_isotope) : nullptr);
+                isotope->include_isotope ? static_cast<const double *const *>(isotope->gamma_isotope) : nullptr,
+                tmatrix->enabled() ? static_cast<const double *const *>(tmatrix->gamma_tmatrix) : nullptr);
         }
 
         gamma_total.clear();

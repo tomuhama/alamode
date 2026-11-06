@@ -1408,7 +1408,7 @@ void KappaResultIOH5::store_gamma_rows(const std::string &tag, const std::vector
 
 void KappaResultIOH5::store_kappa(const double *const *const *kappa_peierls, const double *const *const *kappa_3ph_only,
                                   const double *const *const *kappa_coherent, const double *const *const *kappa_spec,
-                                  const double *const *gamma_isotope)
+                                  const double *const *gamma_isotope, const double *const *gamma_tmatrix)
 {
     // Stamp how the transport weights were built. This belongs on the kappa result, not on
     // the velocities dataset (which always holds finite-difference data), and it is written
@@ -1424,6 +1424,36 @@ void KappaResultIOH5::store_kappa(const double *const *const *kappa_peierls, con
                 grp.createAttribute("formulation", transport_formulation);
             }
         }
+    }
+
+    // Elastic T-matrix rates are recalculated for each run; never cache them as 3ph rates.
+    auto &fh = *impl->file;
+    if (fh.exist("/scattering/tmatrix")) fh.unlink("/scattering/tmatrix");
+    if (gamma_tmatrix) {
+        const auto dims = fh.getDataSet("/scattering/3ph/frequencies").getDimensions();
+        if (impl->tdep || dims.size() != 2)
+            exit("store_kappa", "T-matrix output requires a static host phonon basis.");
+        std::vector<double> gamma(dims[0] * dims[1]);
+        for (size_t iq = 0; iq < dims[0]; ++iq)
+            for (size_t is = 0; is < dims[1]; ++is)
+                gamma[iq * dims[1] + is] = gamma_tmatrix[iq][is] * Ry_to_kayser;
+        auto ds = h5_create_dataset_prealloc<double>(fh, "/scattering/tmatrix/gamma", dims);
+        ds.write_raw(gamma.data());
+        ds.createAttribute("unit", std::string("cm^-1"));
+        ds.createAttribute("averaging", std::string("degenerate-block mean"));
+    }
+    auto grp = fh.getGroup("/kappa");
+    const int with_tmatrix = gamma_tmatrix ? 1 : 0;
+    if (grp.hasAttribute("includes_tmatrix_scattering"))
+        grp.getAttribute("includes_tmatrix_scattering").write(with_tmatrix);
+    else grp.createAttribute("includes_tmatrix_scattering", with_tmatrix);
+    for (const std::string name : {"kappa_peierls", "kappa_total", "kappa_3ph_only", "kappa_coherent"}) {
+        if (!fh.exist("/kappa/" + name)) continue;
+        auto ds = fh.getDataSet("/kappa/" + name);
+        if (!ds.hasAttribute("scattering_processes")) continue;
+        auto processes = impl->scattering_process_string(name != "kappa_3ph_only" && impl->fmeta.with_kappa_3ph_only);
+        if (with_tmatrix) processes += "+tmatrix";
+        ds.getAttribute("scattering_processes").write(processes);
     }
 
     impl->write_tensor_txx("/kappa/kappa_peierls", kappa_peierls);
